@@ -1,5 +1,7 @@
 import tkinter as tk
 
+from click import CommandCollection
+
 # メインウィンドウを作成
 root = tk.Tk()
 root.title("学習ノート")
@@ -11,8 +13,24 @@ root.geometry("800x500")  # 幅x高さ
 left_frame = tk.Frame(root, padx=10, pady=10)
 left_frame.pack(side="left", fill="y")
 
+# 検索エリア
+search_frame = tk.Frame(left_frame)
+search_frame.pack(fill="x", pady=(0, 5))
+
+search_label = tk.Label(search_frame, text="検索", font=("メイリオ", 10))
+search_label.pack(side="left")
+
+search_entry = tk.Entry(search_frame, width=15)
+search_entry.pack(side="left", padx=5)
+
+search_button = tk.Button(search_frame, text="実行", width=6)
+search_button.pack(side="left")
+
+clear_button = tk.Button(search_frame, text="クリア", width=6)
+clear_button.pack(side="left", padx=(5, 0))
+
 # ノート一覧ラベル
-list_label = tk.Label(left_frame, text="ノート一覧")
+list_label = tk.Label(left_frame, text="ノート一覧", font=("メイリオ", 11, "bold"))
 list_label.pack(anchor="w")
 
 # Listbox（ノートタイトルを表示する予定）
@@ -34,7 +52,7 @@ right_frame = tk.Frame(root, padx=10, pady=10)
 right_frame.pack(side="right", fill="both", expand=True)
 
 # タイトルラベル
-title_label = tk.Label(right_frame, text="タイトル")
+title_label = tk.Label(right_frame, text="タイトル", font=("メイリオ", 12, "bold"))
 title_label.pack(anchor="w")
 
 # タイトル入力欄
@@ -55,9 +73,9 @@ body_text.pack(fill="both", expand=True)
 button_frame = tk.Frame(right_frame, pady=10)
 button_frame.pack(fill="x")
 
-new_button = tk.Button(button_frame, text="新規")
-save_button = tk.Button(button_frame, text="保存")
-delete_button = tk.Button(button_frame, text="削除")
+new_button = tk.Button(button_frame, text="新規", width=8, font=("メイリオ", 13))
+save_button = tk.Button(button_frame, text="保存", width=8, font=("メイリオ", 13))
+delete_button = tk.Button(button_frame, text="削除", width=8, font=("メイリオ", 13))
 
 new_button.pack(side="left", padx=5)
 save_button.pack(side="left", padx=5)
@@ -71,6 +89,38 @@ import os
 
 # ノートの保存先ファイル
 NOTE_FILE = "notes.txt"
+
+
+def search_notes():
+    """検索ボタン：タイトル or 本文にキーワードを含むノートだけ表示"""
+    query = search_entry.get().strip()
+    note_listbox.delete(0, tk.END)
+
+    if not query:
+        # 空なら全件表示に戻す
+        load_notes()
+        return
+
+    if not os.path.exists(NOTE_FILE):
+        return
+
+    with open(NOTE_FILE, "r", encoding="utf-8") as f:
+        notes = f.read().split("---\n")
+
+    for note in notes:
+        parts = note.strip().split("\n", 1)
+        if not parts or not parts[0]:
+            continue
+        title = parts[0]
+        body = parts[1] if len(parts) >= 2 else ""
+        if (query in title) or (query in body):
+            note_listbox.insert(tk.END, title)
+
+
+def clear_search():
+    """検索条件をクリアして全件表示に戻す"""
+    search_entry.delete(0, tk.END)
+    load_notes()
 
 
 def save_note():
@@ -176,7 +226,12 @@ def delete_notes():
 # 各ボタンに機能を紐づけ
 save_button.config(command=save_note)
 delete_button.config(command=delete_note)
+# 検索ボタンとクリアボタンに処理を紐づける
+search_button.config(command=search_notes)
+clear_button.config(command=clear_search)
 
+# Enterキーで検索できるようにする
+search_entry.bind("<Return>", lambda event: search_notes())
 # 起動時に既存ノートを読み込み
 load_notes()
 
